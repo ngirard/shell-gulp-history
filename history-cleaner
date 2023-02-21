@@ -1,0 +1,215 @@
+#!/bin/sh
+
+# shellcheck shell=ksh
+
+# POSIX-compliant shell script to clean up history files
+
+USAGE="Usage: $0 [--mode <mode>] <command>
+Available modes: remove (default), trash
+Available commands: cleanup, list, delete, concat
+- cleanup: removes all history files that have only one line
+- list: lists all history files that have less than the specified number of lines
+- delete: deletes all history files that have less than the specified number of lines
+- concat: concatenates all history files that have less than the specified number of lines into a new file and opens it in the editor, then removes or moves the old files"
+
+
+# Default values for environment variables
+HISTORY_DIR=~/history
+TRASH_DIR=~/.local/share/Trash/files
+
+# Error messages
+ERROR_UNSUPPORTED_ACTION='Error: unsupported action'
+ERROR_UNSUPPORTED_MODE='Error: unsupported mode'
+
+# logging functions
+log() {
+  printf '%s\n' "$1" >&2
+}
+
+error() {
+  printf '%s\n' "$1"
+  exit 1
+}
+
+# Ask a question and expect a yes or no answer
+# Usage: ask_question "Question" "y" && echo "Yes" || echo "No"
+ask_question() {
+  question="$1"
+  printf "%s [y/N] " "$question"
+  read -r response
+  case $response in
+    [yY] | [yY][eE][sS]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Get the maximum number of lines for a file to be considered 'short'
+get_max_lines(){
+  printf "Enter the maximum number of lines for a file to be considered 'short': "
+  read -r max_lines
+  echo "$max_lines"
+}
+
+# Find all history files in the history directory
+find_history_files() {
+  find "$HISTORY_DIR" -type f -name '*.sh' -print
+}
+
+# Filter the files whose number of lines is lower of equal that the given threshold
+having_max_lines() {
+  max_lines="$1"
+  while read -r file; do
+    lines=$(wc -l < "$file" | awk '{print $1}')
+    if [ "$lines" -le "$max_lines" ]; then
+      printf '%s\n' "$file"
+    fi
+  done
+}
+
+# Remove or move files based on the remove_mode global variable
+remove_or_move_files() {
+  while read -r file; do
+    if $remove_mode; then
+      rm "$file"
+    else
+      mv "$file" "$TRASH_DIR"
+    fi
+  done
+}
+
+# List all history files that have less than max_lines lines
+list_short_files() {
+  max_lines="$1"
+  find_history_files | (
+    while read -r file; do
+      lines=$(wc -l <"$file")
+      if [ "$lines" -le "$max_lines" ]; then
+        log "File: $file"
+        cat "$file"
+        echo ""
+      fi
+    done
+  )
+}
+
+# Remove all history files that have less than max_lines lines
+delete_short_files() {
+  max_lines="$1"
+  find_history_files | having_max_lines "$max_lines" | remove_or_move_files
+}
+
+# Remove all history files that have only one line
+cleanup_empty_files() {
+  delete_short_files 1
+}
+
+# Concatenate all history files that have less than max_lines lines into a new file
+# and open it in the editor, then remove or move the old files.
+concat_short_files() {
+  max_lines="$1"
+  new_file_name="${2:-history_short_files_$(date +"%Y%m%d_%H%M%S").sh}"
+  new_file="$HISTORY_DIR/$new_file_name"
+
+  # Collect the list of files to be concatenated
+  files_to_concat=$(find_history_files | having_max_lines "$max_lines")
+
+  # Concatenate the files
+  printf '%s\n' "$files_to_concat" | while read -r file; do
+    cat "$file" >>"$new_file"
+    echo "" >>"$new_file"
+  done
+
+  # Open the new file in the editor
+  "${EDITOR:-vi}" "$new_file"
+
+  # Confirm before removing files
+  if ! ask_question "Do you want to remove the old files?"; then
+    exit 0
+  fi
+
+  # Remove or move the old files
+  echo "$files_to_concat" | remove_or_move_files
+}
+
+# Argument parsing function
+parse_arguments() {
+
+  # parse command line options using getopt
+  if ! options=$(getopt -o h --long help,mode: -n 'history-cleaner' -- "$@"); then
+    error "$ERROR_PARSING"
+  fi
+
+  # set positional parameters
+  eval set -- "$options"
+
+  # Set default values for options
+  mode='remove'
+  remove_mode=true
+
+  # process options
+  while true; do
+    case $1 in
+    --mode)
+      mode="$2"
+      shift 2
+      ;;
+    -h | --help)
+      log "$USAGE"
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      error "$ERROR_PARSING"
+      ;;
+    esac
+  done
+
+  case "$mode" in
+  "remove") remove_mode=true ;;
+  "trash") remove_mode=false ;;
+  *) error "$ERROR_UNSUPPORTED_MODE" ;;
+  esac
+
+  # Get arguments
+  if [ $# -lt 1 ]; then
+    error 'Error: action is required'
+  fi
+
+  # set action
+  action=$1
+
+  # check if action is supported
+  if [ "$action" != 'cleanup' ] && [ "$action" != 'list' ] && [ "$action" != 'delete' ] && [ "$action" != 'concat' ]; then
+    error "$ERROR_UNSUPPORTED_ACTION"
+  fi
+}
+
+# main function
+main() {
+  action="$1"
+  remove_mode="$2"
+
+  case $action in
+  "cleanup") cleanup_empty_files;;
+  "list") list_short_files "$(get_max_lines)";;
+  "delete") delete_short_files "$(get_max_lines)";;
+  "concat") concat_short_files "$(get_max_lines)";;
+  *)
+    echo "Usage: $0 <command> [-m remove|trash]" >&2
+    echo "Available commands: cleanup, list, delete, concat" >&2
+    exit 1
+    ;;
+  esac
+}
+
+# shellcheck disable=3028
+if [ "$0" = "${BASH_SOURCE:-$0}" ]; then
+  # Call the argument parsing function
+  parse_arguments "$@"
+
+  # call main function
+  main "$action" "$remove_mode"
+fi
