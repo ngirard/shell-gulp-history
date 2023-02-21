@@ -12,6 +12,9 @@ Available commands: cleanup, list, delete, concat
 - delete: deletes all raw history files that have less than the specified number of lines
 - concat: concatenates all raw history files that have less than the specified number of lines into a new file and opens it in the editor, then removes or moves the old files"
 
+# Default value for the trash directory
+TRASH_DIR=${TRASH_DIR:="$HOME/.local/share/Trash/files"}
+
 # Error messages
 ERROR_MISSING_VARS='Required environment variables are not set.'
 ERROR_UNSUPPORTED_ACTION='Error: unsupported action'
@@ -207,7 +210,7 @@ if [ "$0" = "${BASH_SOURCE:-$0}" ]; then
   parse_arguments "$@"
 
   # Check if required environment variables are set
-  if [ -z "$HISTORY_DIR" ] || [ -z "$RAW_HISTORY_DIR" ] || [ -z "$TRASH_DIR" ]; then
+  if [ -z "$HISTORY_DIR" ] || [ -z "$RAW_HISTORY_DIR" ]; then
     error "$ERROR_MISSING_VARS"
   fi
 

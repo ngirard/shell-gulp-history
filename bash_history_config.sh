@@ -1,9 +1,27 @@
+# bash_history_config.sh
+#
+# This file is a configuration script for managing shell history in Bash.
+#
+# It sets the following environment variables and aliases:
+# - HISTCONTROL: Do not save duplicate lines or lines starting with space in history
+# - HISTSIZE and HISTFILESIZE: Unlimited history
+# - histappend: Append to the history file instead of overwriting it
+# - __h: alias to save the current shell history to disk after each command execution
+# - PROMPT_COMMAND: Add the __h alias to run after each command execution
+# - HISTORY_DIR: Default history directory
+# - RAW_HISTORY_DIR: Directory for storing raw shell history files
+# - CATEGORIZED_HISTORY_DIR: Directory for storing categorized shell history files
+#
+# It also creates the required directories and sets up a new history file for each shell session.
+#
+# This script should be sourced by ~/.bashrc to ensure that the configuration is applied every time a new shell session is started.
+
 # Do not save duplicate lines or lines starting with space in history
 HISTCONTROL=ignoreboth
 
 # Unlimited history
-# In Bash 4.3 and later, setting HISTSIZE to a value less than zero causes the history list to be unlimited
-# Setting HISTFILESIZE to a value less than zero causes the history file size to be unlimited
+# In Bash 4.3 (2014) and later, setting HISTSIZE to a value less than zero causes the history list to be unlimited.
+# Setting HISTFILESIZE to a value less than zero causes the history file size to be unlimited.
 HISTSIZE=-1
 HISTFILESIZE=-1
 
@@ -27,8 +45,6 @@ HISTORY_DIR=${HISTORY_DIR:="$HOME/history"}
 RAW_HISTORY_DIR=${RAW_HISTORY_DIR:="$HISTORY_DIR/raw"}
 # Categorized history directory
 CATEGORIZED_HISTORY_DIR=${CATEGORIZED_HISTORY_DIR:="$HISTORY_DIR/categorized"}
-# Trash directory
-TRASH_DIR=${TRASH_DIR:="$HOME/.local/share/Trash/files"}
 
 # Create history directories if they doesn't exist
 if [ ! -d "$RAW_HISTORY_DIR" ]; then
