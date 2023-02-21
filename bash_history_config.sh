@@ -30,8 +30,14 @@ CATEGORIZED_HISTORY_DIR=${CATEGORIZED_HISTORY_DIR:="$HISTORY_DIR/categorized"}
 # Trash directory
 TRASH_DIR=${TRASH_DIR:="$HOME/.local/share/Trash/files"}
 
-# Create history directory if it doesn't exist
-[[ -d "${RAW_HISTORY_DIR}" ]] || mkdir -p "${RAW_HISTORY_DIR}"
+# Create history directories if they doesn't exist
+if [ ! -d "$RAW_HISTORY_DIR" ]; then
+  mkdir -p "$RAW_HISTORY_DIR"
+fi
+
+if [ ! -d "$CATEGORIZED_HISTORY_DIR" ]; then
+  mkdir -p "$CATEGORIZED_HISTORY_DIR"
+fi
 
 # Create a new history file for current session
 __h_new(){

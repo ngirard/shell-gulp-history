@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# shellcheck shell=ksh
+# shellcheck shell=dash
 
-# POSIX-compliant shell script to clean up shell history files
+# POSIX-compliant shell script to clean up raw shell history files
 
 USAGE="Usage: $0 [--mode <mode>] <command>
 Available modes: remove (default), trash
@@ -12,17 +12,8 @@ Available commands: cleanup, list, delete, concat
 - delete: deletes all raw history files that have less than the specified number of lines
 - concat: concatenates all raw history files that have less than the specified number of lines into a new file and opens it in the editor, then removes or moves the old files"
 
-
-# Default values for environment variables
-HISTORY_DIR=${HISTORY_DIR:="$HOME/history"}
-# Raw history directory
-RAW_HISTORY_DIR=${RAW_HISTORY_DIR:="$HISTORY_DIR/raw"}
-# Categorized history directory
-CATEGORIZED_HISTORY_DIR=${CATEGORIZED_HISTORY_DIR:="$HISTORY_DIR/categorized"}
-# Trash directory
-TRASH_DIR=${TRASH_DIR:="$HOME/.local/share/Trash/files"}
-
 # Error messages
+ERROR_MISSING_VARS='Required environment variables are not set.'
 ERROR_UNSUPPORTED_ACTION='Error: unsupported action'
 ERROR_UNSUPPORTED_MODE='Error: unsupported mode'
 
@@ -214,6 +205,11 @@ main() {
 if [ "$0" = "${BASH_SOURCE:-$0}" ]; then
   # Call the argument parsing function
   parse_arguments "$@"
+
+  # Check if required environment variables are set
+  if [ -z "$HISTORY_DIR" ] || [ -z "$RAW_HISTORY_DIR" ] || [ -z "$TRASH_DIR" ]; then
+    error "$ERROR_MISSING_VARS"
+  fi
 
   # call main function
   main "$action" "$remove_mode"
