@@ -16,10 +16,10 @@ shopt -s histappend
 # The `history -a` command appends the current history to the history file
 # The `history -c` command clears the current shell history
 # The `history -r` command reloads the history from the history file
-alias h='history -a; history -c; history -r'
+alias __h='history -a; history -c; history -r'
 
 # Add h to PROMPT_COMMAND to run after each command execution
-export PROMPT_COMMAND="h; $PROMPT_COMMAND"
+export PROMPT_COMMAND="__h; $PROMPT_COMMAND"
 
 # Default values for environment variables
 HISTORY_DIR=${HISTORY_DIR:="$HOME/history"}
@@ -34,18 +34,18 @@ TRASH_DIR=${TRASH_DIR:="$HOME/.local/share/Trash/files"}
 [[ -d "${RAW_HISTORY_DIR}" ]] || mkdir -p "${RAW_HISTORY_DIR}"
 
 # Create a new history file for current session
-h_new(){
+__h_new(){
     HISTFILE="${RAW_HISTORY_DIR}/$(date -I)_bash_$BASHPID.sh"
     export HISTFILE
-    h_t
+    __h_t
 }
 
 # Add a timestamp comment to the current history file
-h_t(){
+__h_t(){
     echo "# $(date --iso-8601=s)" >> "${HISTFILE}"
 }
 
 # Create a new history file if default file is being used
 if [[ "$HISTFILE" == "$HOME/.bash_history" ]]; then
-    h_new
+    __h_new
 fi
