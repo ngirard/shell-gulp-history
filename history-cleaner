@@ -2,20 +2,25 @@
 
 # shellcheck shell=ksh
 
-# POSIX-compliant shell script to clean up history files
+# POSIX-compliant shell script to clean up shell history files
 
 USAGE="Usage: $0 [--mode <mode>] <command>
 Available modes: remove (default), trash
 Available commands: cleanup, list, delete, concat
-- cleanup: removes all history files that have only one line
-- list: lists all history files that have less than the specified number of lines
-- delete: deletes all history files that have less than the specified number of lines
-- concat: concatenates all history files that have less than the specified number of lines into a new file and opens it in the editor, then removes or moves the old files"
+- cleanup: removes all raw history files that have only one line
+- list: lists all raw history files that have less than the specified number of lines
+- delete: deletes all raw history files that have less than the specified number of lines
+- concat: concatenates all raw history files that have less than the specified number of lines into a new file and opens it in the editor, then removes or moves the old files"
 
 
 # Default values for environment variables
-HISTORY_DIR=~/history
-TRASH_DIR=~/.local/share/Trash/files
+HISTORY_DIR=${HISTORY_DIR:="$HOME/history"}
+# Raw history directory
+RAW_HISTORY_DIR=${RAW_HISTORY_DIR:="$HISTORY_DIR/raw"}
+# Categorized history directory
+CATEGORIZED_HISTORY_DIR=${CATEGORIZED_HISTORY_DIR:="$HISTORY_DIR/categorized"}
+# Trash directory
+TRASH_DIR=${TRASH_DIR:="$HOME/.local/share/Trash/files"}
 
 # Error messages
 ERROR_UNSUPPORTED_ACTION='Error: unsupported action'
@@ -50,9 +55,9 @@ get_max_lines(){
   echo "$max_lines"
 }
 
-# Find all history files in the history directory
+# Find all history files in the raw history directory
 find_history_files() {
-  find "$HISTORY_DIR" -type f -name '*.sh' -print
+  find "$RAW_HISTORY_DIR" -type f -name '*.sh' -print
 }
 
 # Filter the files whose number of lines is lower of equal that the given threshold
@@ -108,7 +113,7 @@ cleanup_empty_files() {
 concat_short_files() {
   max_lines="$1"
   new_file_name="${2:-history_short_files_$(date +"%Y%m%d_%H%M%S").sh}"
-  new_file="$HISTORY_DIR/$new_file_name"
+  new_file="$RAW_HISTORY_DIR/$new_file_name"
 
   # Collect the list of files to be concatenated
   files_to_concat=$(find_history_files | having_max_lines "$max_lines")
