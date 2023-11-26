@@ -16,7 +16,7 @@ Available commands: cleanup, list, delete, concat
 TRASH_DIR=${TRASH_DIR:="$HOME/.local/share/Trash/files"}
 
 # Error messages
-ERROR_MISSING_VARS='Required environment variables are not set.'
+ERROR_MISSING_VAR='Required environment variable is not set: HISTORY_DIR.'
 ERROR_UNSUPPORTED_ACTION='Error: unsupported action'
 ERROR_UNSUPPORTED_MODE='Error: unsupported mode'
 
@@ -51,7 +51,7 @@ get_max_lines(){
 
 # Find all history files in the raw history directory
 find_history_files() {
-  find "$RAW_HISTORY_DIR" -type f -name '*.sh' -print
+  find "${HISTORY_DIR}/raw" -type f -name '*.sh' -print
 }
 
 # Filter the files whose number of lines is lower of equal that the given threshold
@@ -107,7 +107,7 @@ cleanup_empty_files() {
 concat_short_files() {
   max_lines="$1"
   new_file_name="${2:-history_short_files_$(date +"%Y%m%d_%H%M%S").sh}"
-  new_file="$RAW_HISTORY_DIR/$new_file_name"
+  new_file="${HISTORY_DIR}/raw/$new_file_name"
 
   # Collect the list of files to be concatenated
   files_to_concat=$(find_history_files | having_max_lines "$max_lines")
@@ -210,8 +210,8 @@ if [ "$0" = "${BASH_SOURCE:-$0}" ]; then
   parse_arguments "$@"
 
   # Check if required environment variables are set
-  if [ -z "$HISTORY_DIR" ] || [ -z "$RAW_HISTORY_DIR" ]; then
-    error "$ERROR_MISSING_VARS"
+  if [ -z "$HISTORY_DIR" ]; then
+    error "$ERROR_MISSING_VAR"
   fi
 
   # call main function
